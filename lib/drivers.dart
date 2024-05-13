@@ -14,13 +14,24 @@ class _DriversState extends State<Drivers> {
   List drivers = [];
   @override
   void initState() {
-     getData() ;
+    getData();
     // TODO: implement initState
     super.initState();
   }
 
   getData() async {
     drivers = await getDrivers();
+    for (var driver in drivers) {
+      if (driver["deactivated"] == true) {
+        driver["status"] = {"name": "deactivated", "color": Colors.red};
+      } else {
+        if (driver["adminApproved"] == true) {
+          driver["status"] = {"name": "approved", "color": Colors.green};
+        } else {
+          driver["status"] = {"name": "not approved", "color": Colors.red};
+        }
+      }
+    }
     print(drivers);
     setState(() {});
   }
@@ -58,18 +69,31 @@ class _DriversState extends State<Drivers> {
             child: ListView(
               children: [
                 for (var driver in drivers)
-                  Row(
-                    children: [
-                      Expanded(child: Text(driver["userName"])),
-                      SizedBox(width: 10),
-                      Expanded(child: Text(driver["adminApproved"].toString())),
-                      SizedBox(width: 10),
-                      Expanded(child: Text(driver["age"].toString())),
-                      SizedBox(width: 10),
-                      Expanded(child: Text(driver["userName"].toString())),
-                      SizedBox(width: 10),
-                      Expanded(child: Text(driver["phoneNumber"].toString())),
-                    ],
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(driver["userName"])),
+                        SizedBox(width: 10),
+                        Expanded(child: Row(
+                          children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                                decoration: BoxDecoration(color: driver["status"]["color"], borderRadius: BorderRadius.circular(5)),
+                                child: Text(
+                                  driver["status"]["name"],
+                                  style: TextStyle(color: Colors.white, fontSize: 12),
+                                )),
+                          ],
+                        )),
+                        SizedBox(width: 10),
+                        Expanded(child: Text(driver["age"].toString())),
+                        SizedBox(width: 10),
+                        Expanded(child: Text(driver["userName"].toString())),
+                        SizedBox(width: 10),
+                        Expanded(child: Text(driver["phoneNumber"].toString())),
+                      ],
+                    ),
                   ),
               ],
             ),

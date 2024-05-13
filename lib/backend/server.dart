@@ -30,7 +30,7 @@ late BuildContext mainContext;
 class AppConfig {
   static String endpoint = "https://cloud.appwrite.io/v1";
   static String project = "grokci";
-  static String database = "*****";
+  static String database = "6504263e007ff813b432";
   static String orders = "65c9e1dda6e0b52f3463";
   static String products = "650426742ba0530f4ed7";
   static String orderProductMap = "65cf257b2dfaa673e1ad";

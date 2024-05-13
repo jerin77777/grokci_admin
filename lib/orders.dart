@@ -71,29 +71,32 @@ class _OrdersState extends State<Orders> {
             child: ListView(
               children: [
                 for (var order in orders)
-                  Row(
-                    children: [
-                      Expanded(child: Text(order["id"])),
-                      SizedBox(width: 10),
-                      Expanded(child: Text(order["username"])),
-                      SizedBox(width: 10),
-                      Expanded(child: Text(order["deliveryAddress"])),
-                      SizedBox(width: 10),
-                      Expanded(
-                          child: Row(
-                        children: [
-                          Container(
-                              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                              decoration: BoxDecoration(color: getColor(order["orderStatus"]), borderRadius: BorderRadius.circular(5)),
-                              child: Text(
-                                order["orderStatus"],
-                                style: TextStyle(color: Colors.white, fontSize: 12),
-                              )),
-                        ],
-                      )),
-                      SizedBox(width: 10),
-                      Expanded(child: Text(order["amount"].toString())),
-                    ],
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(order["id"])),
+                        SizedBox(width: 10),
+                        Expanded(child: Text(order["username"])),
+                        SizedBox(width: 10),
+                        Expanded(child: Text(order["deliveryAddress"])),
+                        SizedBox(width: 10),
+                        Expanded(
+                            child: Row(
+                          children: [
+                            Container(
+                                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                                decoration: BoxDecoration(color: getColor(order["orderStatus"]), borderRadius: BorderRadius.circular(5)),
+                                child: Text(
+                                  order["orderStatus"],
+                                  style: TextStyle(color: Colors.white, fontSize: 12),
+                                )),
+                          ],
+                        )),
+                        SizedBox(width: 10),
+                        Expanded(child: Text(order["amount"].toString())),
+                      ],
+                    ),
                   ),
               ],
             ),
