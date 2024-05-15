@@ -1,17 +1,17 @@
-import 'package:admin_pannel/backend/server.dart';
 import 'package:flutter/material.dart';
 
-import 'types.dart';
+import '../backend/server.dart';
+import '../types.dart';
 
-class Drivers extends StatefulWidget {
-  const Drivers({super.key});
+class Orders extends StatefulWidget {
+  const Orders({super.key});
 
   @override
-  State<Drivers> createState() => _DriversState();
+  State<Orders> createState() => _OrdersState();
 }
 
-class _DriversState extends State<Drivers> {
-  List drivers = [];
+class _OrdersState extends State<Orders> {
+  List orders = [];
   @override
   void initState() {
     getData();
@@ -20,20 +20,22 @@ class _DriversState extends State<Drivers> {
   }
 
   getData() async {
-    drivers = await getDrivers();
-    for (var driver in drivers) {
-      if (driver["deactivated"] == true) {
-        driver["status"] = {"name": "deactivated", "color": Colors.red};
-      } else {
-        if (driver["adminApproved"] == true) {
-          driver["status"] = {"name": "approved", "color": Colors.green};
-        } else {
-          driver["status"] = {"name": "not approved", "color": Colors.red};
-        }
-      }
-    }
-    print(drivers);
+    orders = await getOrders();
+
+    print(orders);
     setState(() {});
+  }
+
+  getColor(status) {
+    if (status == "pending") {
+      return Colors.red;
+    } else if (status == "picking") {
+      return Colors.amber;
+    } else if (status == "delivering") {
+      return Colors.amber;
+    } else {
+      return Colors.green;
+    }
   }
 
   @override
@@ -43,21 +45,21 @@ class _DriversState extends State<Drivers> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Drivers", style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700, color: Pallet.primary)),
+          Text("Orders", style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700, color: Pallet.primary)),
           SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Row(
               children: [
-                Expanded(child: Text("User Name")),
+                Expanded(child: Text("Order Id")),
+                SizedBox(width: 10),
+                Expanded(child: Text("User")),
+                SizedBox(width: 10),
+                Expanded(child: Text("Location")),
                 SizedBox(width: 10),
                 Expanded(child: Text("Status")),
                 SizedBox(width: 10),
-                Expanded(child: Text("Age")),
-                SizedBox(width: 10),
-                Expanded(child: Text("Docs")),
-                SizedBox(width: 10),
-                Expanded(child: Text("Phone")),
+                Expanded(child: Text("Amount")),
               ],
             ),
           ),
@@ -68,30 +70,31 @@ class _DriversState extends State<Drivers> {
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
             child: ListView(
               children: [
-                for (var driver in drivers)
+                for (var order in orders)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 5),
                     child: Row(
                       children: [
-                        Expanded(child: Text(driver["userName"])),
+                        Expanded(child: Text(order["id"])),
                         SizedBox(width: 10),
-                        Expanded(child: Row(
+                        Expanded(child: Text(order["username"])),
+                        SizedBox(width: 10),
+                        Expanded(child: Text(order["deliveryAddress"])),
+                        SizedBox(width: 10),
+                        Expanded(
+                            child: Row(
                           children: [
-                              Container(
+                            Container(
                                 padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                                decoration: BoxDecoration(color: driver["status"]["color"], borderRadius: BorderRadius.circular(5)),
+                                decoration: BoxDecoration(color: getColor(order["orderStatus"]), borderRadius: BorderRadius.circular(5)),
                                 child: Text(
-                                  driver["status"]["name"],
+                                  order["orderStatus"],
                                   style: TextStyle(color: Colors.white, fontSize: 12),
                                 )),
                           ],
                         )),
                         SizedBox(width: 10),
-                        Expanded(child: Text(driver["age"].toString())),
-                        SizedBox(width: 10),
-                        Expanded(child: Text(driver["userName"].toString())),
-                        SizedBox(width: 10),
-                        Expanded(child: Text(driver["phoneNumber"].toString())),
+                        Expanded(child: Text(order["amount"].toString())),
                       ],
                     ),
                   ),

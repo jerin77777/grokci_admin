@@ -1,14 +1,16 @@
+import 'package:admin_pannel/screens/promotions.dart';
+
 import 'backend/server.dart';
-import 'orders.dart';
+import 'screens/orders.dart';
 import 'types.dart';
-import 'drivers.dart';
+import 'screens/drivers.dart';
 import 'package:appwrite/appwrite.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/svg.dart';
 
-import 'products.dart';
+import 'screens/products.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +57,9 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
+    Window.width = MediaQuery.of(context).size.width;
+    Window.height = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: Pallet.background,
       body: Row(
@@ -130,7 +135,6 @@ class _HomeState extends State<Home> {
                     ),
                   ),
                 ),
-               
                 InkWell(
                   onTap: () {
                     routerSink.add("users");
@@ -168,7 +172,7 @@ class _HomeState extends State<Home> {
           ),
           Expanded(
               child: StreamBuilder<Object>(
-                  initialData: "drivers",
+                  initialData: "promotions",
                   stream: routerStream,
                   builder: (context, snapshot) {
                     return Navigator(
@@ -190,6 +194,10 @@ class _HomeState extends State<Home> {
                         else if (snapshot.data == "drivers")
                           MaterialPage(
                             child: Drivers(),
+                          )
+                           else if (snapshot.data == "promotions")
+                          MaterialPage(
+                            child: Promotions(),
                           )
                         else
                           MaterialPage(

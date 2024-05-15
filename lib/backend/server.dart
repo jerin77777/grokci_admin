@@ -35,7 +35,9 @@ class AppConfig {
   static String products = "650426742ba0530f4ed7";
   static String orderProductMap = "65cf257b2dfaa673e1ad";
   static String drivers = "65ccc7954c7d0de38f77";
+  static String categories = "663f1f04001b7ef90642";
   static String warehouses = "65cf4c83826d08f5f8f0";
+  static String promotions = "664483050014267591fe";
 }
 
 getOrders() async {
@@ -44,6 +46,28 @@ getOrders() async {
     databaseId: AppConfig.database,
     collectionId: AppConfig.orders,
     queries: [Query.limit(50), Query.orderDesc("orderTime")],
+  );
+  result = getResult(temp.documents);
+  return result;
+}
+
+getCategories() async {
+  List<Map> result = [];
+  DocumentList temp = await db.listDocuments(
+    databaseId: AppConfig.database,
+    collectionId: AppConfig.categories,
+    // queries: [],
+  );
+  result = getResult(temp.documents);
+  return result;
+}
+
+getPromotions() async {
+  List<Map> result = [];
+  DocumentList temp = await db.listDocuments(
+    databaseId: AppConfig.database,
+    collectionId: AppConfig.promotions,
+    queries: [Query.orderDesc("createdAt")],
   );
   result = getResult(temp.documents);
   return result;

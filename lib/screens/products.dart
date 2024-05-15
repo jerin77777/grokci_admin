@@ -2,18 +2,19 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:uuid/uuid.dart';
 
-import 'backend/server.dart';
-import 'types.dart';
-import 'widgets.dart';
+import '../backend/server.dart';
+import '../types.dart';
+import '../widgets.dart';
 
-manageCategory(BuildContext context, {String? categoryName}) {
-  TextEditingController name = TextEditingController();
+Future<void> manageCategory(BuildContext context, {String? categoryId, String? categoryName}) async {
+  TextEditingController _categoryName = TextEditingController();
   if (categoryName != null) {
-    name.text = categoryName;
+    _categoryName.text = categoryName;
   }
 
-  showDialog(
+  await showDialog(
       context: context,
       builder: (context) => AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
@@ -31,7 +32,7 @@ manageCategory(BuildContext context, {String? categoryName}) {
                 Text("Category Name"),
                 SizedBox(height: 10),
                 TextBox(
-                  controller: name,
+                  controller: _categoryName,
                   type: "string",
                 ),
                 SizedBox(height: 30),
@@ -47,7 +48,22 @@ manageCategory(BuildContext context, {String? categoryName}) {
                     SizedBox(width: 10),
                     SmallButton(
                       label: "Done",
-                      onPress: () {
+                      onPress: () async {
+                        Map data = {"categoryName": _categoryName.text};
+                        if (categoryId == null) {
+                          await db.createDocument(
+                              databaseId: AppConfig.database,
+                              collectionId: AppConfig.categories,
+                              documentId: Uuid().v4(),
+                              data: data);
+                        } else {
+                          await db.updateDocument(
+                              databaseId: AppConfig.database,
+                              collectionId: AppConfig.categories,
+                              documentId: categoryId,
+                              data: data);
+                        }
+
                         Navigator.of(context).pop();
                       },
                     ),
@@ -58,38 +74,25 @@ manageCategory(BuildContext context, {String? categoryName}) {
           ));
 }
 
-manageProduct(context,
-    {String? productName,
-    double? originalPrice,
-    double? sellingPrice,
-    int? discountPercentage,
-    String? priceDescription,
-    String? ingredients,
-    String? netContent,
-    String? manufacturer,
-    DateTime? expiryDate,
-    String? fssai,
-    String? eanCode,
-    String? about,
-    int? stockQuantity,
-    String? imageId,
-    String? categoryId}) {
+Future<void> manageProduct(context, {String? productName, Map? product}) async {
   int page = 0;
-  TextEditingController _productName = TextEditingController();
-  TextEditingController _originalPrice = TextEditingController();
-  TextEditingController _sellingPrice = TextEditingController();
-  TextEditingController _discountPercentage = TextEditingController();
+  String expiry = "";
+  TextEditingController _productName = TextEditingController(text: product?["name"]);
+  TextEditingController _originalPrice = TextEditingController(text: product?["originalPrice"].toString());
+  TextEditingController _sellingPrice = TextEditingController(text: product?["sellingPrice"].toString());
+  TextEditingController _discountPercentage = TextEditingController(text: product?["discountPercentage"].toString());
   // double _originalPrice = 0;
   // double _sellingPrice = 0;
   // int _discountPercentage = 0;
-  TextEditingController _priceDescription = TextEditingController();
-  TextEditingController _ingredients = TextEditingController();
-  TextEditingController _netContent = TextEditingController();
-  TextEditingController _manufacturer = TextEditingController();
-  TextEditingController _fassai = TextEditingController();
-  TextEditingController _eanCode = TextEditingController();
-  TextEditingController _about = TextEditingController();
-  TextEditingController _stockQuantity = TextEditingController();
+  TextEditingController _priceDescription = TextEditingController(text: product?["priceDescription"]);
+  TextEditingController _ingredients = TextEditingController(text: product?["ingredients"]);
+  TextEditingController _netContent = TextEditingController(text: product?["netContent"]);
+  TextEditingController _manufacturer = TextEditingController(text: product?["manufacturer"]);
+  TextEditingController _fassai = TextEditingController(text: product?["fassai"]);
+  TextEditingController _eanCode = TextEditingController(text: product?["eanCode"]);
+  TextEditingController _about = TextEditingController(text: product?["about"]);
+  TextEditingController _stockQuantity = TextEditingController(text: product?["stockQuantity"].toString());
+  List changes = [];
 
   String _imageId = "";
   // String _categoryId = TextEditingController();
@@ -98,7 +101,7 @@ manageProduct(context,
     _productName.text = productName;
   }
 
-  showDialog(
+  await showDialog(
       context: context,
       builder: (context) => AlertDialog(
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
@@ -122,6 +125,9 @@ manageProduct(context,
                           SizedBox(height: 5),
                           TextBox(
                             controller: _productName,
+                            onType: (value) {
+                              changes = safeAdd("name", value, changes);
+                            },
                             type: "string",
                           ),
                           SizedBox(height: 5),
@@ -133,6 +139,9 @@ manageProduct(context,
                                 TextBox(
                                   controller: _originalPrice,
                                   type: "double",
+                                  onType: (value) {
+                                    changes = safeAdd("originalPrice", value, changes);
+                                  },
                                 ),
                               ]),
                             ),
@@ -146,6 +155,9 @@ manageProduct(context,
                                 TextBox(
                                   controller: _sellingPrice,
                                   type: "double",
+                                  onType: (value) {
+                                    changes = safeAdd("sellingPrice", value, changes);
+                                  },
                                 ),
                               ],
                             ))
@@ -159,8 +171,11 @@ manageProduct(context,
                                   Text("Stock Quantity"),
                                   SizedBox(height: 5),
                                   TextBox(
-                                    controller: _discountPercentage,
+                                    controller: _stockQuantity,
                                     type: "int",
+                                    onType: (value) {
+                                      changes = safeAdd("stockQuantity", value, changes);
+                                    },
                                   ),
                                 ],
                               )),
@@ -174,6 +189,9 @@ manageProduct(context,
                                   TextBox(
                                     controller: _discountPercentage,
                                     type: "int",
+                                    onType: (value) {
+                                      changes = safeAdd("discountPercentage", value, changes);
+                                    },
                                   ),
                                 ],
                               )),
@@ -183,9 +201,12 @@ manageProduct(context,
                           Text("Price Description"),
                           SizedBox(height: 5),
                           TextBox(
-                            controller: _discountPercentage,
+                            controller: _priceDescription,
                             maxLines: 3,
                             type: "string",
+                            onType: (value) {
+                              changes = safeAdd("priceDescription", value, changes);
+                            },
                           ),
                         ] else if (page == 1) ...[
                           Text("Product description"),
@@ -194,21 +215,43 @@ manageProduct(context,
                             controller: _about,
                             maxLines: 5,
                             type: "string",
+                            onType: (value) {
+                              changes = safeAdd("about", value, changes);
+                            },
                           ),
                           SizedBox(height: 5),
-                          Text("Epiry Date"),
+                          Text("Expiry Date"),
                           SizedBox(height: 5),
-                          TextBox(
-                            controller: _discountPercentage,
-                            type: "string",
+                          InkWell(
+                            onTap: () {
+                              showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now(),
+                                firstDate: DateTime(DateTime.now().year),
+                                lastDate: DateTime(2025),
+                              ).then((value) {
+                                print(value);
+                                expiry = value.toString().split(" ")[0];
+                                refreshSink.add("");
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
+                              decoration: BoxDecoration(color: Pallet.inner1, borderRadius: BorderRadius.circular(10)),
+                              child: Text(expiry.isEmpty ? "pick" : expiry),
+                            ),
                           ),
                           SizedBox(height: 5),
                           Text("Ingredients"),
                           SizedBox(height: 5),
                           TextBox(
                             controller: _ingredients,
+                            // onType: (value) {},
                             maxLines: 3,
                             type: "string",
+                            onType: (value) {
+                              changes = safeAdd("ingredients", value, changes);
+                            },
                           ),
                           SizedBox(height: 5),
                           Text("Net Content"),
@@ -216,6 +259,9 @@ manageProduct(context,
                           TextBox(
                             controller: _netContent,
                             type: "string",
+                            onType: (value) {
+                              changes = safeAdd("netContent", value, changes);
+                            },
                           ),
                           SizedBox(height: 5),
                           Text("Manufacturer"),
@@ -223,6 +269,9 @@ manageProduct(context,
                           TextBox(
                             controller: _manufacturer,
                             type: "string",
+                            onType: (value) {
+                              changes = safeAdd("manufacturer", value, changes);
+                            },
                           ),
                           SizedBox(height: 5),
                         ] else if (page == 2) ...[
@@ -256,15 +305,21 @@ manageProduct(context,
                           Text("Fassai"),
                           SizedBox(height: 5),
                           TextBox(
-                            controller: _manufacturer,
+                            controller: _fassai,
                             type: "string",
+                            onType: (value) {
+                              safeAdd("fassai", value, changes);
+                            },
                           ),
                           SizedBox(height: 5),
                           Text("eanCode"),
                           SizedBox(height: 5),
                           TextBox(
-                            controller: _manufacturer,
+                            controller: _eanCode,
                             type: "string",
+                            onType: (value) {
+                              safeAdd("eanCode", value, changes);
+                            },
                           ),
                         ],
                         SizedBox(height: 30),
@@ -285,9 +340,27 @@ manageProduct(context,
                             SizedBox(width: 10),
                             SmallButton(
                               label: (page >= 2) ? "Done" : "Next",
-                              onPress: () {
+                              onPress: () async {
                                 if (page >= 2) {
-                                  Navigator.of(context).pop();
+                                  Map data = {};
+                                  for (var change in changes) {
+                                    data[change["key"]] = change["value"];
+                                  }
+                                  print(data);
+                                  if (product == null) {
+                                    await db.createDocument(
+                                        databaseId: AppConfig.database,
+                                        collectionId: AppConfig.products,
+                                        documentId: Uuid().v4(),
+                                        data: data);
+                                  } else {
+                                    await db.updateDocument(
+                                        databaseId: AppConfig.database,
+                                        collectionId: AppConfig.products,
+                                        documentId: product["id"],
+                                        data: data);
+                                  }
+                                  Navigator.pop(context);
                                 } else {
                                   page++;
                                   refreshSink.add("");
@@ -303,6 +376,25 @@ manageProduct(context,
           ));
 }
 
+safeAdd(String key, String value, List changes) {
+  bool exists = false;
+  for (var i = 0; i < changes.length; i++) {
+    if (changes[i]["key"] == key) {
+      exists = true;
+      if (value.trim().isEmpty) {
+        changes.removeAt(i);
+      } else {
+        changes[i]["value"] = value;
+      }
+    }
+  }
+
+  if (!exists) {
+    changes.add({"key": key, "value": value});
+  }
+  return changes;
+}
+
 class Categories extends StatefulWidget {
   const Categories({super.key});
 
@@ -311,6 +403,21 @@ class Categories extends StatefulWidget {
 }
 
 class _CategoriesState extends State<Categories> {
+  List categories = [];
+  @override
+  void initState() {
+    getData();
+
+    // TODO: implement initState
+    super.initState();
+  }
+
+  getData() async {
+    categories = await getCategories();
+    print(categories);
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -325,7 +432,9 @@ class _CategoriesState extends State<Categories> {
               SmallButton(
                 label: "add",
                 onPress: () {
-                  manageCategory(context);
+                  manageCategory(context).then((value) {
+                    getData();
+                  });
                 },
               ),
             ],
@@ -339,54 +448,61 @@ class _CategoriesState extends State<Categories> {
                 crossAxisCount: 6,
                 childAspectRatio: 1,
                 children: <Widget>[
-                  InkWell(
-                    onTap: () {
-                      routerSink.add("products");
-                    },
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(color: Pallet.shadow, offset: const Offset(1, 1), blurRadius: 5, spreadRadius: 2),
-                        ],
+                  for (var category in categories)
+                    InkWell(
+                      onTap: () {
+                        routerSink.add("products");
+                      },
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(color: Pallet.shadow, offset: const Offset(1, 1), blurRadius: 5, spreadRadius: 2),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                              InkWell(
+                                  onTap: () {
+                                    manageCategory(context,
+                                            categoryId: category["id"], categoryName: category["categoryName"])
+                                        .then((value) {
+                                      getData();
+                                    });
+                                    ;
+                                  },
+                                  child: Icon(Icons.edit, color: Pallet.font2)),
+                              Icon(Icons.delete, color: Pallet.font2),
+                            ]),
+                            Expanded(
+                                child: Center(
+                                    child: Text(
+                              category["categoryName"],
+                              style: TextStyle(fontSize: 20, color: Pallet.font3),
+                            ))),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Container(
+                                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: Pallet.primary.withOpacity(0.8)),
+                                    child: Text(
+                                      "2 products",
+                                      style: TextStyle(fontSize: 12, color: Colors.white),
+                                    ))
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Column(
-                        children: [
-                          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                            InkWell(
-                                onTap: () {
-                                  manageCategory(context, categoryName: "fruits");
-                                },
-                                child: Icon(Icons.edit)),
-                            Icon(Icons.delete),
-                          ]),
-                          Expanded(
-                              child: Center(
-                                  child: Text(
-                            "Fruits",
-                            style: TextStyle(fontSize: 16),
-                          ))),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Container(
-                                  padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10), color: Pallet.primary.withOpacity(0.8)),
-                                  child: Text(
-                                    "2 products",
-                                    style: TextStyle(fontSize: 12, color: Colors.white),
-                                  ))
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
+                    )
                 ]),
           ),
         ],
@@ -431,7 +547,9 @@ class _ProductsState extends State<Products> {
               SmallButton(
                 label: "add",
                 onPress: () {
-                  manageProduct(context);
+                  manageProduct(context).then((_) {
+                    getData();
+                  });
                 },
               ),
             ],
@@ -464,14 +582,40 @@ class _ProductsState extends State<Products> {
                             padding: const EdgeInsets.symmetric(horizontal: 5),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                Image.network(getUrl(product["imageId"])),
-                                Text(product["name"]),
-                                Text(
-                                  "${product["sellingPrice"]} Rs",
-                                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                                )
+                                Expanded(child: Image.network(getUrl(product["imageId"]))),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(product["name"],style: TextStyle(
+                                            color: Pallet.font2
+                                          ),),
+                                          SizedBox(height: 5),
+                                          Text(
+                                            "${product["sellingPrice"]} Rs",
+                                            style: TextStyle(
+                                              color: Pallet.font2,
+
+                                              fontWeight: FontWeight.w800, fontSize: 16),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    InkWell(
+                                        onTap: () {
+                                          manageProduct(context, product: product).then((_) {
+                                            getData();
+                                          });
+                                        },
+                                        child: Icon(Icons.edit, color: Pallet.font2)),
+                                    Icon(Icons.delete, color: Pallet.font2)
+                                  ],
+                                ),
+                                SizedBox(height: 5),
                               ],
                             ),
                           ),

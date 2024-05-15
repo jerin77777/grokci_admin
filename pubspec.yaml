@@ -38,6 +38,7 @@ dependencies:
   appwrite: ^12.0.3
   flutter_svg: ^1.1.6
   file_picker: ^8.0.3
+  uuid: ^4.4.0
 
 
 dev_dependencies:

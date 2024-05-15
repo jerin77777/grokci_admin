@@ -22,3 +22,9 @@ class Pallet {
   static Color inner1 = Color(0xFFeaefe9);
   static Color shadow = Color(0xFFeaefe9);
 }
+
+
+class Window{
+  static double width = 0;
+  static double height = 0;
+}
