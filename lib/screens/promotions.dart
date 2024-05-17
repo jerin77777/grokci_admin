@@ -42,7 +42,7 @@ Future<void> managePromotion(BuildContext context, {Map? promotion}) async {
                       SizedBox(height: 10),
                       TextBox(
                         controller: _discountPercentage,
-                        type: "integer",
+                        type: "int",
                       ),
                       SizedBox(height: 10),
                       Text("Expiry"),

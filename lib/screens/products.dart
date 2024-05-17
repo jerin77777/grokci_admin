@@ -1,7 +1,10 @@
-import 'dart:io';
+import 'dart:io' as io;
 
+import 'package:appwrite/appwrite.dart';
+import 'package:appwrite/models.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart';
 import 'package:uuid/uuid.dart';
 
 import '../backend/server.dart';
@@ -74,7 +77,7 @@ Future<void> manageCategory(BuildContext context, {String? categoryId, String? c
           ));
 }
 
-Future<void> manageProduct(context, {String? productName, Map? product}) async {
+Future<void> manageProduct(context, {Map? product}) async {
   int page = 0;
   String expiry = "";
   TextEditingController _productName = TextEditingController(text: product?["name"]);
@@ -92,14 +95,12 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
   TextEditingController _eanCode = TextEditingController(text: product?["eanCode"]);
   TextEditingController _about = TextEditingController(text: product?["about"]);
   TextEditingController _stockQuantity = TextEditingController(text: product?["stockQuantity"].toString());
+  PlatformFile? image;
   List changes = [];
+  String error = "";
 
   String _imageId = "";
   // String _categoryId = TextEditingController();
-
-  if (productName != null) {
-    _productName.text = productName;
-  }
 
   await showDialog(
       context: context,
@@ -126,7 +127,9 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                           TextBox(
                             controller: _productName,
                             onType: (value) {
-                              changes = safeAdd("name", value, changes);
+                              changes = safeAdd("name", value, "string", changes);
+                              error = "";
+                              refreshSink.add("");
                             },
                             type: "string",
                           ),
@@ -140,7 +143,9 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                                   controller: _originalPrice,
                                   type: "double",
                                   onType: (value) {
-                                    changes = safeAdd("originalPrice", value, changes);
+                                    changes = safeAdd("originalPrice", value, "double", changes);
+                                    error = "";
+                                    refreshSink.add("");
                                   },
                                 ),
                               ]),
@@ -156,7 +161,9 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                                   controller: _sellingPrice,
                                   type: "double",
                                   onType: (value) {
-                                    changes = safeAdd("sellingPrice", value, changes);
+                                    changes = safeAdd("sellingPrice", value, "double", changes);
+                                    error = "";
+                                    refreshSink.add("");
                                   },
                                 ),
                               ],
@@ -174,7 +181,9 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                                     controller: _stockQuantity,
                                     type: "int",
                                     onType: (value) {
-                                      changes = safeAdd("stockQuantity", value, changes);
+                                      changes = safeAdd("stockQuantity", value, "int", changes);
+                                      error = "";
+                                      refreshSink.add("");
                                     },
                                   ),
                                 ],
@@ -190,7 +199,9 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                                     controller: _discountPercentage,
                                     type: "int",
                                     onType: (value) {
-                                      changes = safeAdd("discountPercentage", value, changes);
+                                      changes = safeAdd("discountPercentage", value, "int", changes);
+                                      error = "";
+                                      refreshSink.add("");
                                     },
                                   ),
                                 ],
@@ -205,7 +216,9 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                             maxLines: 3,
                             type: "string",
                             onType: (value) {
-                              changes = safeAdd("priceDescription", value, changes);
+                              changes = safeAdd("priceDescription", value, "string", changes);
+                              error = "";
+                              refreshSink.add("");
                             },
                           ),
                         ] else if (page == 1) ...[
@@ -216,7 +229,9 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                             maxLines: 5,
                             type: "string",
                             onType: (value) {
-                              changes = safeAdd("about", value, changes);
+                              changes = safeAdd("about", value, "string", changes);
+                              error = "";
+                              refreshSink.add("");
                             },
                           ),
                           SizedBox(height: 5),
@@ -232,6 +247,7 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                               ).then((value) {
                                 print(value);
                                 expiry = value.toString().split(" ")[0];
+                                error = "";
                                 refreshSink.add("");
                               });
                             },
@@ -250,7 +266,9 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                             maxLines: 3,
                             type: "string",
                             onType: (value) {
-                              changes = safeAdd("ingredients", value, changes);
+                              changes = safeAdd("ingredients", value, "string", changes);
+                              error = "";
+                              refreshSink.add("");
                             },
                           ),
                           SizedBox(height: 5),
@@ -260,7 +278,9 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                             controller: _netContent,
                             type: "string",
                             onType: (value) {
-                              changes = safeAdd("netContent", value, changes);
+                              changes = safeAdd("netContent", value, "string", changes);
+                              error = "";
+                              refreshSink.add("");
                             },
                           ),
                           SizedBox(height: 5),
@@ -270,37 +290,46 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                             controller: _manufacturer,
                             type: "string",
                             onType: (value) {
-                              changes = safeAdd("manufacturer", value, changes);
+                              changes = safeAdd("manufacturer", value, "string", changes);
+                              error = "";
+                              refreshSink.add("");
                             },
                           ),
                           SizedBox(height: 5),
                         ] else if (page == 2) ...[
                           Text("Image"),
                           SizedBox(height: 5),
-                          InkWell(
-                            onTap: () async {
-                              FilePickerResult? result = await FilePicker.platform.pickFiles();
+                          if (image == null)
+                            InkWell(
+                              onTap: () async {
+                                FilePickerResult? result = await FilePicker.platform.pickFiles();
 
-                              if (result != null) {
-                                File file = File(result.files.single.path!);
-                              } else {
-                                // User canceled the picker
-                              }
-                            },
-                            child: Container(
-                              height: 100,
-                              decoration: BoxDecoration(
-                                  color: Pallet.inner1,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Pallet.primary)),
-                              child: Center(
-                                child: Text(
-                                  "Add Image",
-                                  style: TextStyle(color: Pallet.primary),
+                                if (result != null) {
+                                  image = result.files.first;
+                                } else {
+                                  // User canceled the picker
+                                }
+                                error = "";
+                                refreshSink.add("");
+                              },
+                              child: Container(
+                                height: 100,
+                                decoration: BoxDecoration(
+                                    color: Pallet.inner1,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Pallet.primary)),
+                                child: Center(
+                                  child: Text(
+                                    "Add Image",
+                                    style: TextStyle(color: Pallet.primary),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
+                            )
+                          else
+                            ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.memory(image!.bytes!, height: 200, width: 200, fit: BoxFit.cover)),
                           SizedBox(height: 5),
                           Text("Fassai"),
                           SizedBox(height: 5),
@@ -308,7 +337,9 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                             controller: _fassai,
                             type: "string",
                             onType: (value) {
-                              safeAdd("fassai", value, changes);
+                              safeAdd("fassai", value, "string", changes);
+                              error = "";
+                              refreshSink.add("");
                             },
                           ),
                           SizedBox(height: 5),
@@ -318,10 +349,23 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                             controller: _eanCode,
                             type: "string",
                             onType: (value) {
-                              safeAdd("eanCode", value, changes);
+                              safeAdd("eanCode", value, "string", changes);
+                              error = "";
+                              refreshSink.add("");
                             },
                           ),
                         ],
+                        if (error.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: SizedBox(
+                              width: 250,
+                              child: Text(
+                                error,
+                                style: TextStyle(color: Colors.red, fontSize: 12),
+                              ),
+                            ),
+                          ),
                         SizedBox(height: 30),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
@@ -344,23 +388,54 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
                                 if (page >= 2) {
                                   Map data = {};
                                   for (var change in changes) {
-                                    data[change["key"]] = change["value"];
+                                    if (change["type"] == "double") {
+                                      // print(value);
+                                      data[change["key"]] = double.parse(change["value"].toString());
+                                      // print("${key} ${value}");
+                                    } else if (change["type"] == "int") {
+                                      data[change["key"]] = int.parse(change["value"].toString());
+                                    } else {
+                                      data[change["key"]] = change["value"];
+                                    }
                                   }
+                                  data["categoryId"] = selectedCategory["id"];
                                   print(data);
-                                  if (product == null) {
-                                    await db.createDocument(
-                                        databaseId: AppConfig.database,
-                                        collectionId: AppConfig.products,
-                                        documentId: Uuid().v4(),
-                                        data: data);
-                                  } else {
-                                    await db.updateDocument(
-                                        databaseId: AppConfig.database,
-                                        collectionId: AppConfig.products,
-                                        documentId: product["id"],
-                                        data: data);
+                                  if (image != null) {
+                                    // var _bytes = await image!.readAsBytes();
+                                    File _image = await storage.createFile(
+                                        bucketId: "65cdfdc7bba4531e45ad",
+                                        fileId: ID.unique(),
+                                        file: InputFile.fromBytes(
+                                            bytes: List<int>.from(image!.bytes!), filename: Uuid().v4()));
+                                    data["imageId"] = _image.$id;
                                   }
-                                  Navigator.pop(context);
+
+                                  if (product == null) {
+                                    try {
+                                      await db.createDocument(
+                                          databaseId: AppConfig.database,
+                                          collectionId: AppConfig.products,
+                                          documentId: Uuid().v4(),
+                                          data: data);
+                                    } catch (e) {
+                                      error = e.toString();
+                                      refreshSink.add("");
+                                    }
+                                  } else {
+                                    try {
+                                      await db.updateDocument(
+                                          databaseId: AppConfig.database,
+                                          collectionId: AppConfig.products,
+                                          documentId: product["id"],
+                                          data: data);
+                                    } catch (e) {
+                                      error = e.toString();
+                                      refreshSink.add("");
+                                    }
+                                  }
+                                  if (error.isEmpty) {
+                                    Navigator.pop(context);
+                                  }
                                 } else {
                                   page++;
                                   refreshSink.add("");
@@ -376,7 +451,7 @@ Future<void> manageProduct(context, {String? productName, Map? product}) async {
           ));
 }
 
-safeAdd(String key, String value, List changes) {
+safeAdd(String key, String value, String type, List changes) {
   bool exists = false;
   for (var i = 0; i < changes.length; i++) {
     if (changes[i]["key"] == key) {
@@ -390,7 +465,7 @@ safeAdd(String key, String value, List changes) {
   }
 
   if (!exists) {
-    changes.add({"key": key, "value": value});
+    changes.add({"key": key, "value": value, "type": type});
   }
   return changes;
 }
@@ -451,6 +526,7 @@ class _CategoriesState extends State<Categories> {
                   for (var category in categories)
                     InkWell(
                       onTap: () {
+                        selectedCategory = category;
                         routerSink.add("products");
                       },
                       child: Container(
@@ -512,13 +588,14 @@ class _CategoriesState extends State<Categories> {
 }
 
 class Products extends StatefulWidget {
-  const Products({super.key, required this.categoryId});
-  final int categoryId;
+  const Products({super.key, required this.category});
+  final Map category;
   @override
   State<Products> createState() => _ProductsState();
 }
 
 class _ProductsState extends State<Products> {
+  List<Map> backup = [];
   List<Map> products = [];
   @override
   void initState() {
@@ -529,7 +606,8 @@ class _ProductsState extends State<Products> {
 
   getData() async {
     products = await getProducts(1);
-    print(products);
+    backup = products;
+    print(backup);
     setState(() {});
   }
 
@@ -542,7 +620,8 @@ class _ProductsState extends State<Products> {
         children: [
           Row(
             children: [
-              Text("Products", style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700, color: Pallet.primary)),
+              Text(selectedCategory["categoryName"],
+                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700, color: Pallet.primary)),
               SizedBox(width: 10),
               SmallButton(
                 label: "add",
@@ -553,6 +632,46 @@ class _ProductsState extends State<Products> {
                 },
               ),
             ],
+          ),
+          SizedBox(height: 10),
+          Container(
+            width: 300,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.search, size: 18),
+                SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                      onChanged: (value) {
+                        products = [];
+                        print(backup);
+                        if (value.trim().isEmpty) {
+                          products = backup;
+                        } else {
+                          for (var product in backup) {
+                            if (product["name"].toString().toLowerCase().contains(value.toLowerCase())) {
+                              products.add(product);
+                            }
+                          }
+                        }
+
+                        setState(() {});
+                      },
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.zero,
+                        hintText: "search",
+                        hintStyle: TextStyle(fontSize: 14, color: Pallet.font3),
+                        isDense: true,
+                        border: InputBorder.none,
+                      )),
+                ),
+              ],
+            ),
           ),
           SizedBox(height: 10),
           Expanded(
@@ -591,16 +710,15 @@ class _ProductsState extends State<Products> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(product["name"],style: TextStyle(
-                                            color: Pallet.font2
-                                          ),),
+                                          Text(
+                                            product["name"],
+                                            style: TextStyle(color: Pallet.font2),
+                                          ),
                                           SizedBox(height: 5),
                                           Text(
                                             "${product["sellingPrice"]} Rs",
                                             style: TextStyle(
-                                              color: Pallet.font2,
-
-                                              fontWeight: FontWeight.w800, fontSize: 16),
+                                                color: Pallet.font2, fontWeight: FontWeight.w800, fontSize: 16),
                                           ),
                                         ],
                                       ),

@@ -10,6 +10,8 @@ StreamController<String> refresh = StreamController<String>.broadcast();
 StreamSink<String> get refreshSink => refresh.sink;
 Stream<String> get refreshStream => refresh.stream;
 
+Map selectedCategory = {};
+
 class Pallet {
   static Color primary = Color(0xFF30E287);
   static Color primary2 = Color(0xFF006D3C);

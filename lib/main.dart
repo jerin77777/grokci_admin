@@ -188,14 +188,14 @@ class _HomeState extends State<Home> {
                         else if (snapshot.data == "products")
                           MaterialPage(
                             child: Products(
-                              categoryId: 1,
+                              category: selectedCategory,
                             ),
                           )
                         else if (snapshot.data == "drivers")
                           MaterialPage(
                             child: Drivers(),
                           )
-                           else if (snapshot.data == "promotions")
+                        else if (snapshot.data == "promotions")
                           MaterialPage(
                             child: Promotions(),
                           )
